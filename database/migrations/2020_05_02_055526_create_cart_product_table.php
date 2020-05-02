@@ -17,7 +17,7 @@ class CreateCartProductTable extends Migration
             $table->bigIncrements('id');
             $table->integer('cart_id')->nullable()->index();
             $table->integer('pd_id')->nullable()->index();
-            $table->integer('pd_name')->nullable();
+            $table->string('pd_name')->nullable();
             $table->integer('pd_price')->nullable();
             $table->integer('cp_qty')->nullable();
             $table->integer('cp_total')->nullable();

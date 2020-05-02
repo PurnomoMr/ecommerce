@@ -24,13 +24,20 @@
             </div>
             <div class="pull-right">
                 <a class="btn btn-warning" href="/"> Back to Ecommerce</a>
-                <a class="btn btn-success" href="{{ route('promo.create') }}"> Create New Promo</a>
+                <a class="btn btn-primary" href="/product-list">Add more product</a>
+                <a class="btn btn-success" href="/summary-cart">Summary Cart</a>
             </div>
         </div>
     </div>
    
     @if ($message = Session::get('success'))
         <div class="alert alert-success">
+            <p>{{ $message }}</p>
+        </div>
+    @endif
+    
+    @if ($message = Session::get('success'))
+        <div class="alert alert-danger">
             <p>{{ $message }}</p>
         </div>
     @endif
@@ -48,15 +55,12 @@
             <td>{{ $promo->prm_code }}</td>
             <td>{{ $promo->prm_percentage }}</td>
             <td>
-                <form action="{{ route('promo.destroy',$promo->id) }}" method="POST">
+                <form action="/cart" method="POST">
 
     
-                    <a class="btn btn-primary" href="{{ route('promo.edit',$promo->id) }}">Edit</a>
-   
                     @csrf
-                    @method('DELETE')
       
-                    <button type="submit" class="btn btn-danger">Delete</button>
+                    <button type="submit" name="promo[]" value="{{ $promo->id }}" class="btn btn-danger">Use</button>
                 </form>
             </td>
         </tr>

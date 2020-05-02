@@ -16,6 +16,6 @@ class Cart extends Model
      * @var array
      */
     protected $fillable = [
-        'user_id', 'prm_id', 'cart_discount', 'cart_total'
+        'user_id', 'prm_id', 'cart_subtotal', 'cart_discount', 'cart_total'
     ];
 }

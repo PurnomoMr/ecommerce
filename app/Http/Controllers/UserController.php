@@ -44,7 +44,7 @@ class UserController extends Controller
         ]);
 
         $user = User::where('user_email', $request->user_email)->get();
-        if(empty($user->id)) {
+        if(empty($user[0]->id)) {
             $latest_user = User::create($request->all());
             
             session()->put('user_name', $request->user_name);
@@ -52,10 +52,10 @@ class UserController extends Controller
             return redirect("/product-list")
                             ->with('success','User created successfully. Please choose your products.');
         } else {
-            session()->put('user_name', $user->user_name);
-            session()->put('user_id', $user->id);
+            session()->put('user_name', $user[0]->user_name);
+            session()->put('user_id', $user[0]->id);
             return redirect('/product-list')
-                            ->with('success','Welcome back '.$user->user_name.', Please choose your products.');
+                            ->with('success','Welcome back '.$user[0]->user_name.', Please choose your products.');
         }
    
     }

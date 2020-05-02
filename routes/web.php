@@ -17,6 +17,8 @@ Route::resource('/promo', 'promoController');
 Route::get('/user', 'userController@create');
 Route::post('/user', 'userController@store');
 Route::get('/product-list', 'productController@list');
-Route::post('/promo-list', 'promoController@list');
+Route::get('/promo-list', 'promoController@list');
 Route::post('/cart', 'cartController@store');
+Route::get('/view-cart', 'cartController@index');
+Route::get('/cart-product', 'cartController@destroy');
 

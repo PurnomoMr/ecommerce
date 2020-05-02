@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Cart;
+use App\CartProduct;
 use App\Product;
 use App\Promo;
 use App\User;
@@ -18,6 +19,15 @@ class CartController extends Controller
     public function index()
     {
         //
+        $cart = User::select(
+            "users.user_name", "users.user_email", "promos.prm_code", "carts.id", "carts.cart_subtotal", "carts.cart_discount",
+            "carts.user_id", "carts.cart_total")
+            ->join("carts", "users.id", "=", "carts.user_id")
+            ->leftJoin("promos", "promos.id", "=", "carts.prm_id")
+                ->where("users.id", session()->get('user_id'))->first();
+                
+        $products = CartProduct::where("cart_id", $cart->id)->get();
+        return view("summary", compact('cart', 'products'));
     }
 
     /**
@@ -52,7 +62,7 @@ class CartController extends Controller
             'promo[]'  => 'integer|min:1'
         ]);
         
-        $cart = Cart::where("user_id", $user->id)->get(); 
+        $cart = Cart::where("user_id", $user->id)->first(); 
         $data = array(
             "user_id" =>  $user->id
         );
@@ -62,58 +72,85 @@ class CartController extends Controller
         }
         $cp_total = 0;
         $qty = 0;
+        $data['cart_subtotal'] = $cart->cart_total != null ? $cart->cart_total : 0;
+        $data['cart_discount'] = $cart->cart_discount != null ? $cart->cart_discount : 0;
         if(isset($request->product) && count($request->product) > 0) {
+            $data['cart_subtotal'] = 0;
             foreach ($request->product as $key => $value) {
                 # code...
                 $product_id = $request->product[$key];
                 $qty = $request->qty[$key];
 
             }
-            $product = Product::where("id", $product_id)->get();
+            $product = Product::find($product_id);
             
             if(empty($product->id)) {
                 return redirect('/product-list')
                     ->with('error','Product sold out.');
             }
+            
             $cp_total = $qty * $product->pd_price;
             $cart_product = array(
                 "cart_id" => $cart->id,
                 "pd_id" => $product->id,
                 "pd_name" => $product->pd_name,
-                "cp_qty" => $request->qty,
+                "pd_price" => $product->pd_price,
+                "cp_qty" => $qty,
                 "cp_total" => $cp_total
             );
-            Product::create($cart_product);
+            $latest_cart_product = CartProduct::where(["cart_id" => $cart->id, "pd_id" => $product->id])->first();
+
+            if(empty($latest_cart_product)) {
+                CartProduct::create($cart_product);
+            } else {
+                CartProduct::where("id", $latest_cart_product->id)->update($cart_product);
+            }
+
+            $getAllCartProduct = CartProduct::where("cart_id", $cart->id)->get();
             
-            $data['cart_subtotal'] = $cart->cart_total != null ? $cart->cart_total + $cp_total : 0 + $cp_total;
-            $data['cart_discount'] = $cart->cart_discount != null ? $cart->cart_discount : 0;
+            foreach ($getAllCartProduct as $keyCP => $valueCP) {
+                # code...
+                $data['cart_subtotal'] += $valueCP->cp_total;
+            }
+
+            if(!empty($cart->prm_id)) {
+                $data = $this->sumPromo($data, $cart->prm_id);
+            } else {
+                $data['cart_discount'] = 0;
+            }
+
+            $data['cart_total'] = $data['cart_subtotal'] - $data['cart_discount'];
             Cart::where("id", $cart->id)->update($data);
-            return redirect('/promo-list')
-                ->with('error','Product sold out.');
+            return redirect('/product-list')
+                ->with('success','Product added to cart.');
         }
 
-        $data['cart_subtotal'] = $cart->cart_total != null ? $cart->cart_total + $cp_total : 0 + $cp_total;
-        $data['cart_discount'] = $cart->cart_discount != null ? $cart->cart_discount : 0;
         foreach ($request->promo as $key => $value) {
             # code...
             $promo_id = $value;
         }
+        
         if(isset($request->promo) && count($request->promo) > 0 && $promo_id != $cart->prm_id){
-            $promo = Promo::whereIn("id", $promo_id)->get();
-
-            if(empty($promo->id)) {
-                return redirect('/promo-list')
-                    ->with('error','Promo can not be use.');
-            }
-            $data['prm_id'] =  $promo->prm_id;
-            $data['cart_discount'] = ($data['cart_subtotal'] * $promo->prm_percetage) / 100;
+           $data = $this->sumPromo($data, $promo_id);
         }
         
         $data['cart_total'] = $data['cart_subtotal'] - $data['cart_discount'];
-
+        
         Cart::where("id", $cart->id)->update($data);
-        return redirect('/promo-list')
-            ->with('error','Product sold out.');
+        return redirect('/view-cart')
+            ->with('error','Promo success to use.');
+    }
+
+    protected function sumPromo($data, $promo_id) {
+        $promo = Promo::where("id", $promo_id)->first();
+            
+        if(empty($promo->id)) {
+            return redirect('/promo-list')
+                ->with('error','Promo can not be use.');
+        }
+        $data['prm_id'] =  $promo->id;
+        $data['cart_discount'] = ceil($data['cart_subtotal'] * $promo->prm_percentage / 100);
+        return $data;
     }
 
     /**
@@ -156,8 +193,27 @@ class CartController extends Controller
      * @param  \App\Cart  $cart
      * @return \Illuminate\Http\Response
      */
-    public function destroy(Cart $cart)
+    public function destroy($id)
     {
-        //
+        $product = CartProduct::find($id);
+
+        if(empty($cartProduct)) {
+
+        } else {
+            
+            $cartProduct = CartProduct::join("carts", "carts.cart_id", "=", "cart_products.cart_id")
+            ->leftJoin("promos", "promos.id", "=", "carts.prm_id")
+                ->where(["carts.cart_id" => $product->cart_id, "carts.user_id" => session()->get('user_id') ])->get();
+            CartProduct::where("id", $product->id)->delete();
+            $data = [];
+            foreach ($cartProduct as $key => $value) {
+                # code...
+                $data['cart_subtotal'] += $value->cp_total;
+            }
+        }
+        $cartProduct->delete();
+  
+        return redirect()->route('product.index')
+                        ->with('success','Product deleted successfully');
     }
 }
