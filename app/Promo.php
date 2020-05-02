@@ -3,11 +3,11 @@
 namespace App;
 
 use Illuminate\Notifications\Notifiable;
-use Illuminate\Contracts\Auth\MustVerifyEmail;
-use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Database\Eloquent\Model;
 
-class User extends Authenticatable
+class Promo extends Model
 {
+    //
     use Notifiable;
 
     /**
@@ -16,6 +16,6 @@ class User extends Authenticatable
      * @var array
      */
     protected $fillable = [
-        'user_name', 'user_email'
+        'prm_code', 'prm_percentage'
     ];
 }

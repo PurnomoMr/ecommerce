@@ -11,6 +11,12 @@
 |
 */
 
-Route::get('/', function () {
-    return view('welcome');
-});
+Route::get('/', 'userController@index');
+Route::resource('/product', 'productController');
+Route::resource('/promo', 'promoController');
+Route::get('/user', 'userController@create');
+Route::post('/user', 'userController@store');
+Route::get('/product-list', 'productController@list');
+Route::post('/promo-list', 'promoController@list');
+Route::post('/cart', 'cartController@store');
+

@@ -13,10 +13,11 @@ class CreateCartTable extends Migration
      */
     public function up()
     {
-        Schema::create('cart', function (Blueprint $table) {
+        Schema::create('carts', function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->integer('user_id')->nullable()->index();
             $table->integer('prm_id')->nullable()->index();
+            $table->integer('cart_subtotal')->nullable();
             $table->integer('cart_discount')->nullable();
             $table->integer('cart_total')->nullable();
             $table->timestamps();
@@ -30,6 +31,6 @@ class CreateCartTable extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('cart');
+        Schema::dropIfExists('carts');
     }
 }

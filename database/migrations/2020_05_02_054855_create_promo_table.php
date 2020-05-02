@@ -13,7 +13,7 @@ class CreatePromoTable extends Migration
      */
     public function up()
     {
-        Schema::create('promo', function (Blueprint $table) {
+        Schema::create('promos', function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->string('prm_code')->nullable();
             $table->string('prm_percentage')->nullable();
@@ -28,6 +28,6 @@ class CreatePromoTable extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('promo');
+        Schema::dropIfExists('promos');
     }
 }
